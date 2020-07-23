@@ -11,12 +11,7 @@ type Message struct {
 	ProductIds []string         `json:"product_ids"`
 	ProductID  string           `json:"product_id"`
 	Message    string           `json:"message"`
-	TradeID    int              `json:"trade_id,number"`
-	Sequence   int64            `json:"sequence,number"`
 	Time       time.Time        `json:"time,string"`
-	Price      string           `json:"price"`
-	Side       string           `json:"side"`
-	LastSize   string           `json:"last_size"`
 	BestBid    float64          `json:"best_bid,string"`
 	BestAsk    float64          `json:"best_ask,string"`
 }
@@ -30,7 +25,7 @@ const EthBtc string = "ETH-BTC"
 const BtcUsd string = "BTC-USD"
 const BtcEur string = "BTC-EUR"
 
-func SubscribeMethods(connection *websocket.Conn, message *Message) (error) {
+func SubscribeMethods(connection *websocket.Conn, message *Message) error {
 	var response Message
 
 	if err := connection.WriteJSON(message); err != nil {
@@ -56,4 +51,3 @@ func CreateConnection() (*websocket.Conn, error) {
 
 	return connection, err
 }
-

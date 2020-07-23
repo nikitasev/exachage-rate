@@ -9,6 +9,10 @@ import (
 )
 
 func main() {
+	if err := initDb(); err != nil {
+		panic(err.Error())
+	}
+
 	connection, err := cb.CreateConnection()
 
 	if err != nil {
@@ -18,7 +22,7 @@ func main() {
 	defer connection.Close()
 
 	subscribe := cb.Message{
-		Type:      "subscribe",
+		Type: "subscribe",
 		Channels: []cb.MessageChannel{
 			{
 				Name: "ticker",
@@ -35,19 +39,6 @@ func main() {
 		panic(err.Error())
 	}
 
-
-	configs := make(map[string]*gosql.Config)
-	configs["default"] = &gosql.Config{
-		Enable:  true,
-		Driver:  "mysql",
-		Dsn:     "root@tcp(127.0.0.1:3306)/test",
-		ShowSql: true,
-	}
-
-	if err = gosql.Connect(configs); err != nil {
-		panic(err.Error())
-	}
-
 	// Create 3 stream to handle responses from websocket
 	ch1 := make(chan cb.Message)
 	ch2 := make(chan cb.Message)
@@ -59,11 +50,9 @@ func main() {
 
 	for {
 		response := cb.Message{}
-		if err := connection.ReadJSON(&response); err != nil {
+		if err := connection.ReadJSON(&response); err != nil || response.Type == "error" {
 			println(err.Error())
 			continue
-		} else if response.Type == "error" {
-			println(response.Message)
 		}
 
 		switch response.ProductID {
@@ -77,6 +66,21 @@ func main() {
 	}
 }
 
+func initDb() error {
+	configs := make(map[string]*gosql.Config)
+	configs["default"] = &gosql.Config{
+		Enable:  true,
+		Driver:  "mysql",
+		Dsn:     "root@tcp(127.0.0.1:3306)/test",
+		ShowSql: true,
+	}
+
+	if err := gosql.Connect(configs); err != nil {
+		return err
+	}
+
+	return nil
+}
 
 func saveExchangeRate(ch chan cb.Message) {
 	for {
@@ -85,14 +89,12 @@ func saveExchangeRate(ch chan cb.Message) {
 		if _, err := gosql.Model(
 			&e.Ticks{
 				Timestamp: response.Time.Unix(),
-				Symbol: response.ProductID,
-				Bid: response.BestBid,
-				Ask: response.BestAsk,
+				Symbol:    response.ProductID,
+				Bid:       response.BestBid,
+				Ask:       response.BestAsk,
 			}).Create(); err != nil {
 			fmt.Print(err.Error())
 			continue
 		}
 	}
 }
-
-
