@@ -45,9 +45,13 @@ func SubscribeMethods(connection *websocket.Conn, message *Message) error {
 	return nil
 }
 
-func CreateConnection() (*websocket.Conn, error) {
+func CreateConnection() *websocket.Conn {
 	var dialer websocket.Dialer
 	connection, _, err := dialer.Dial("wss://ws-feed.pro.coinbase.com", nil)
 
-	return connection, err
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return connection
 }
